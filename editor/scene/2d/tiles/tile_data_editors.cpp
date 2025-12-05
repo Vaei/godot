@@ -348,6 +348,37 @@ void GenericTilePolygonEditor::_advanced_menu_item_pressed(int p_item_pressed) {
 			undo_redo->add_undo_method(this, "emit_signal", "polygons_changed");
 			undo_redo->commit_action(true);
 		} break;
+		case COPY_TILE: {
+			copied_polygons.clear();
+			for (unsigned int i = 0; i < polygons.size(); i++) {
+				Vector<Point2> poly;
+				poly.resize(polygons[i].size());
+				for (int j = 0; j < polygons[i].size(); j++) {
+					poly.write[j] = polygons[i][j];
+				}
+				copied_polygons.push_back(poly);
+			}
+			has_copied_polygons = !copied_polygons.is_empty();
+		} break;
+		case PASTE_TILE: {
+			if (!has_copied_polygons) {
+				break;
+			}
+			undo_redo->create_action(TTR("Paste Tile Shape"));
+			undo_redo->add_do_method(this, "clear_polygons");
+			for (const Vector<Point2> &poly : copied_polygons) {
+				undo_redo->add_do_method(this, "add_polygon", poly);
+			}
+			undo_redo->add_do_method(base_control, "queue_redraw");
+			undo_redo->add_do_method(this, "emit_signal", "polygons_changed");
+			undo_redo->add_undo_method(this, "clear_polygons");
+			for (const PackedVector2Array &poly : polygons) {
+				undo_redo->add_undo_method(this, "add_polygon", poly);
+			}
+			undo_redo->add_undo_method(base_control, "queue_redraw");
+			undo_redo->add_undo_method(this, "emit_signal", "polygons_changed");
+			undo_redo->commit_action(true);
+		} break;
 		case ROTATE_RIGHT:
 		case ROTATE_LEFT:
 		case FLIP_HORIZONTALLY:
@@ -913,6 +944,9 @@ void GenericTilePolygonEditor::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("polygons_changed"));
 }
 
+Vector<Vector<Point2>> GenericTilePolygonEditor::copied_polygons;
+bool GenericTilePolygonEditor::has_copied_polygons = false;
+
 GenericTilePolygonEditor::GenericTilePolygonEditor() {
 	toolbar = memnew(HBoxContainer);
 	add_child(toolbar);
@@ -958,6 +992,9 @@ GenericTilePolygonEditor::GenericTilePolygonEditor() {
 	button_advanced_menu->set_toggle_mode(true);
 	button_advanced_menu->get_popup()->add_item(TTR("Reset to default tile shape"), RESET_TO_DEFAULT_TILE, Key::F);
 	button_advanced_menu->get_popup()->add_item(TTR("Clear"), CLEAR_TILE, Key::C);
+	button_advanced_menu->get_popup()->add_separator();
+	button_advanced_menu->get_popup()->add_item(TTR("Copy"), COPY_TILE, KeyModifierMask::CTRL | Key::C);
+	button_advanced_menu->get_popup()->add_item(TTR("Paste"), PASTE_TILE, KeyModifierMask::CTRL | Key::V);
 	button_advanced_menu->get_popup()->add_separator();
 	button_advanced_menu->get_popup()->add_item(TTR("Rotate Right"), ROTATE_RIGHT, Key::R);
 	button_advanced_menu->get_popup()->add_item(TTR("Rotate Left"), ROTATE_LEFT, Key::E);

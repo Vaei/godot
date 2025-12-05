@@ -132,6 +132,9 @@ private:
 
 	Vector<Point2> in_creation_polygon;
 
+	static Vector<Vector<Point2>> copied_polygons;
+	static bool has_copied_polygons;
+
 	Panel *panel = nullptr;
 	Control *base_control = nullptr;
 	EditorZoomWidget *editor_zoom_widget = nullptr;
@@ -148,6 +151,8 @@ private:
 	enum AdvancedMenuOption {
 		RESET_TO_DEFAULT_TILE,
 		CLEAR_TILE,
+		COPY_TILE,
+		PASTE_TILE,
 		ROTATE_RIGHT,
 		ROTATE_LEFT,
 		FLIP_HORIZONTALLY,
